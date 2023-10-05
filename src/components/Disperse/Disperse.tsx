@@ -96,6 +96,60 @@ const Disperse = () => {
     setErrors(newErrors);
   };
 
+  const removeRepetitiveAddresses = () => {
+    const lines = areaInput.text.split("\n");
+    const uniqueAddresses = new Set();
+    const newTextLines = [];
+
+    for (const line of lines) {
+      const [address, amount] = line.split(/[=, ]+/);
+
+      if (!uniqueAddresses.has(address)) {
+        uniqueAddresses.add(address);
+        newTextLines.push(`${address}=${amount}`);
+      }
+    }
+
+    const uniqueText = newTextLines.join("\n");
+
+    setAreaInput({
+      text: uniqueText,
+      line: newTextLines.length,
+    });
+    setErrors([]);
+  };
+
+  const mergeRepeatedAddresses = () => {
+    const lines = areaInput.text.split("\n");
+    const addressAmountMap = new Map();
+
+    for (const line of lines) {
+      const [address, amountStr] = line.split(/[=, ]+/);
+      const amount = parseFloat(amountStr);
+
+      if (!isNaN(amount)) {
+        if (addressAmountMap.has(address)) {
+          // Add the amount to the existing address entry
+          addressAmountMap.set(address, addressAmountMap.get(address) + amount);
+        } else {
+          // Create a new entry for the address
+          addressAmountMap.set(address, amount);
+        }
+      }
+    }
+
+    // Convert the map back to text format
+    const mergedText = Array.from(addressAmountMap, ([address, amount]) => {
+      return `${address}=${amount}`;
+    }).join("\n");
+
+    setAreaInput({
+      text: mergedText,
+      line: mergedText.split("\n").length,
+    });
+    setErrors([]);
+  };
+
   const hasDuplicateAddressError = errors.some((error) =>
     error.includes("duplicate in Line")
   );
@@ -151,7 +205,13 @@ const Disperse = () => {
               <div className="py-0 flex flex-col gap-1 justify-between align-middle md:py-2 md:flex-row">
                 <p>Duplicated</p>
                 <p className="text-red-600">
-                  Keep the first one | Combine Balance
+                  <button onClick={removeRepetitiveAddresses}>
+                    Keep the first one
+                  </button>
+                  &nbsp;&nbsp;|&nbsp;&nbsp;
+                  <button onClick={mergeRepeatedAddresses}>
+                    Combine Balance
+                  </button>
                 </p>
               </div>
             </>
